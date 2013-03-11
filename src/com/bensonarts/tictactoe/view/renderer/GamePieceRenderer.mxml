@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:ItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009" 
+				xmlns:s="library://ns.adobe.com/flex/spark" 
+				xmlns:mx="library://ns.adobe.com/flex/mx" 
+				autoDrawBackground="false" width="130" height="130">
+	
+	<fx:Script>
+		<![CDATA[
+			import com.bensonarts.tictactoe.enum.PlayerType;
+			import com.bensonarts.tictactoe.event.GameMoveEvent;
+			import com.bensonarts.tictactoe.model.vo.GamePieceVO;
+			
+			public static const GAME_PIECE_CLICK:String = "gamePieceClick";
+			
+			protected function button_clickHandler(event:MouseEvent):void
+			{
+				var vo:GamePieceVO = this.data as GamePieceVO;
+				vo.label = "X";
+				vo.used = true;
+				vo.playerType = PlayerType.PLAYER_HUMAN;
+				
+				this.dispatchEvent(new GameMoveEvent(GamePieceRenderer.GAME_PIECE_CLICK, vo, true, true));
+			}
+		]]>
+	</fx:Script>
+	
+	
+	<s:Button id="btn" label="{data.label}" click="button_clickHandler(event)" 
+			  width="100%" height="100%" enabled="{!data.used}"
+			  skinClass="com.bensonarts.tictactoe.view.skin.GamePieceSkin" />
+	
+</s:ItemRenderer>

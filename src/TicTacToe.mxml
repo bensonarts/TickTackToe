@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:WindowedApplication xmlns:fx="http://ns.adobe.com/mxml/2009" 
+					   xmlns:s="library://ns.adobe.com/flex/spark" 
+					   xmlns:mx="library://ns.adobe.com/flex/mx"
+					   title="Tic Tac Toe"
+					   width="420" height="520"
+					   >
+	
+	<fx:Style>
+		@namespace s "library://ns.adobe.com/flex/spark";
+		@namespace mx "library://ns.adobe.com/flex/mx";
+		
+		#gamePieceList
+		{
+			paddingBottom: 0;
+			paddingLeft: 0;
+			paddingRight: 0;
+			paddingTop: 0;
+		}
+		
+		.heading
+		{
+			fontSize: 18;
+			fontWeight: bold;
+			paddingBottom: 10;
+			paddingLeft: 10;
+			paddingRight: 10;
+			paddingTop: 10;
+		}
+		
+	</fx:Style>
+	
+	<fx:Script>
+		<![CDATA[
+			import com.bensonarts.tictactoe.ai.AIPlayer;
+			import com.bensonarts.tictactoe.enum.PlayerType;
+			import com.bensonarts.tictactoe.event.GameMoveEvent;
+			import com.bensonarts.tictactoe.model.vo.GamePieceVO;
+			import com.bensonarts.tictactoe.pattern.strategy.AIStrategy;
+			import com.bensonarts.tictactoe.pattern.structure.VictoryStructure;
+			import com.bensonarts.tictactoe.view.renderer.GamePieceRenderer;
+			
+			import mx.collections.ArrayCollection;
+			import mx.events.FlexEvent;
+			
+			public static const TOTAL_PIECES:int = 9;
+			public static const STATE_START:String = "Start";
+			public static const STATE_GAME:String = "Game";
+			
+			[Bindable]
+			public var gamePieceCollection:ArrayCollection;
+			
+			[Bindable]
+			public var playerWins:int = 0;
+			
+			[Bindable]
+			public var computerWins:int = 0;
+			
+			[Bindable]
+			public var gameActive:Boolean = true;
+			
+			protected var gameMode:int = AIStrategy.MODE_EASY;
+			protected var aiPlayer:AIPlayer = AIPlayer.getInstance();
+			protected var victoryStructure:VictoryStructure = VictoryStructure.getInstance();
+			
+			protected function startup(gameMode:int):void
+			{
+				// Create game pieces
+				var col:ArrayCollection = new ArrayCollection();
+				for (var i:int = 0; i < TicTacToe.TOTAL_PIECES; i++)
+				{
+					col.addItem(new GamePieceVO(i));
+				}
+				this.gamePieceCollection = col;
+				this.aiPlayer.startup(this.gamePieceCollection, gameMode);
+				this.victoryStructure.startup(this.gamePieceCollection);
+				this.gameActive = true;
+				this.currentState = TicTacToe.STATE_GAME;
+			}
+			
+			protected function gamePieceList_creationCompleteHandler(event:FlexEvent):void
+			{
+				this.addEventListener(GamePieceRenderer.GAME_PIECE_CLICK, this.onGamePieceClick);
+			}
+			
+			protected function onGamePieceClick(e:GameMoveEvent):void
+			{
+				e.stopPropagation();
+				
+				if (this.victoryStructure.isVictory(PlayerType.PLAYER_HUMAN))
+				{
+					// handle human victory
+					trace('you win');
+					this.playerWins++;
+					this.gameActive = false;
+					return;
+				}
+				
+				this.aiPlayer.move();
+				if (this.victoryStructure.isVictory(PlayerType.PLAYER_COMPUTER))
+				{
+					// handle computer victory
+					trace('you lose');
+					this.computerWins++;
+					this.gameActive = false;
+					return;
+				}
+				
+				if (this.victoryStructure.isDraw())
+				{
+					trace('Draw');
+					this.gameActive = false;
+					return;
+				}
+			}
+			
+			protected function btnStartOver_clickHandler(event:MouseEvent):void
+			{
+				trace('start over');
+				this.startup(this.gameMode);
+			}
+			
+			protected function btnEasyMode_clickHandler(event:MouseEvent):void
+			{
+				this.gameMode = AIStrategy.MODE_EASY
+				this.startup(this.gameMode);
+			}
+			
+			protected function btnHardMode_clickHandler(event:MouseEvent):void
+			{
+				this.gameMode = AIStrategy.MODE_HARD;
+				this.startup(this.gameMode);
+			}
+			
+		]]>
+	</fx:Script>
+	
+	<fx:Declarations>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	
+	<s:states>
+		<s:State name="Start" />
+		<s:State name="Game" />
+	</s:states>
+	
+	<s:VGroup width="100%" includeIn="Start" horizontalAlign="center">
+		<s:Label text="Start Game" styleName="heading" />
+		<s:HGroup>
+			<s:Button id="btnEasyMode" label="Easy" click="btnEasyMode_clickHandler(event)" />
+			<s:Button id="btnHardMode" label="Hard" click="btnHardMode_clickHandler(event)" enabled="false" />
+		</s:HGroup>
+	</s:VGroup>
+	
+	<s:VGroup width="100%" includeIn="Game">
+		<s:HGroup width="100%">
+			<s:Label id="scoreLabel" text="Score - You: {this.playerWins} Computer: {this.computerWins}" styleName="heading" />
+		</s:HGroup>
+		
+		<s:List itemRenderer="com.bensonarts.tictactoe.view.renderer.GamePieceRenderer"
+				id="gamePieceList" borderAlpha="0"
+				dataProvider="{this.gamePieceCollection}"
+				creationComplete="gamePieceList_creationCompleteHandler(event)"
+				verticalScrollPolicy="off" horizontalScrollPolicy="off"
+				width="100%" enabled="{this.gameActive}">
+			<s:layout>
+				<s:TileLayout requestedColumnCount="3" requestedRowCount="3" horizontalGap="5" verticalGap="5"
+							  horizontalAlign="center" verticalAlign="middle" />
+			</s:layout>
+		</s:List>
+		
+		<s:Button id="btnStartOver" label="Start Over" enabled="{ ! this.gameActive}" visible="{ ! this.gameActive}"
+				  click="btnStartOver_clickHandler(event)" />
+	</s:VGroup>
+	
+</s:WindowedApplication>
